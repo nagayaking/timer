@@ -151,6 +151,12 @@
   padding: 4px;
 }
 
+@media (min-width: 768px) {
+  .tabs {
+    display: none;
+  }
+}
+
 .tab {
   flex: 1;
   padding: 8px 12px;
@@ -160,7 +166,18 @@
   transition: background-color 0.2s ease;
 }
 
-.tabs.hidden {
+.card {
   display: none;
 }
+
+.card.active {
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .card {
+    display: block;
+  }
+}
+
 

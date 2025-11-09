@@ -211,34 +211,18 @@ const App: React.FC = () => {
   const selectedPreset = timerPresets.find(p => p.id === selectedPresetId);
   const progress = totalSeconds > 0 ? ((totalSeconds - currentSeconds) / totalSeconds) * 100 : 0;
 
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  useEffect(() => {
-    if (Notification.permission === 'default') Notification.requestPermission();
-  }, []);
-
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>Flow Timer</h1>
       
-      {isMobile && (
-        <div className={styles.tabs}>
-          <div className={`${styles.tab} ${activeTab === 'timer' ? styles.active : ''}`} onClick={() => setActiveTab('timer')}>Timer Setup</div>
-          <div className={`${styles.tab} ${activeTab === 'running' ? styles.active : ''}`} onClick={() => setActiveTab('running')}>Timer</div>
-          <div className={`${styles.tab} ${activeTab === 'tasks' ? styles.active : ''}`} onClick={() => setActiveTab('tasks')}>Tasks</div>
-        </div>
-      )}
+      <div className={styles.tabs}>
+        <div className={`${styles.tab} ${activeTab === 'timer' ? styles.active : ''}`} onClick={() => setActiveTab('timer')}>Timer Setup</div>
+        <div className={`${styles.tab} ${activeTab === 'running' ? styles.active : ''}`} onClick={() => setActiveTab('running')}>Timer</div>
+        <div className={`${styles.tab} ${activeTab === 'tasks' ? styles.active : ''}`} onClick={() => setActiveTab('tasks')}>Tasks</div>
+      </div>
 
       <div className={styles.grid}>
-        <div className={styles.card} style={{ display: !isMobile || activeTab === 'timer' ? 'block' : 'none' }}>
+        <div className={`${styles.card} ${activeTab === 'timer' ? styles.active : ''}`}>
           <h2 className={styles.cardHeader}>Timer Presets</h2>
           <select
             value={selectedPresetId || ''}
@@ -285,7 +269,7 @@ const App: React.FC = () => {
           )}
         </div>
 
-        <div className={styles.card} style={{ display: !isMobile || activeTab === 'running' ? 'block' : 'none' }}>
+        <div className={`${styles.card} ${activeTab === 'running' ? styles.active : ''}`}>
           <h2 className={styles.cardHeader}>{selectedPreset ? selectedPreset.name : 'Timer'}</h2>
           <select
             value={selectedTaskId || ''}
@@ -330,7 +314,7 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        <div className={styles.card} style={{ display: !isMobile || activeTab === 'tasks' ? 'block' : 'none' }}>
+        <div className={`${styles.card} ${activeTab === 'tasks' ? styles.active : ''}`}>
           <h2 className={styles.cardHeader}>Tasks</h2>
           <button onClick={addTask} className={`${styles.button} ${styles.primary}`} style={{ width: '100%', marginBottom: '16px' }}>
             <Plus size={20} style={{ marginRight: '8px' }} />
