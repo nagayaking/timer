@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw, Plus, Trash2, Edit2, Clock, Repeat, Bell, BellOff, AlertCircle, Check, X } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Play, Pause, RotateCcw, Plus, Trash2, Edit2, Clock, Repeat, Bell, BellOff, Check, X } from 'lucide-react';
 
 // 型定義
 type NotificationType = 'sound' | 'alert' | 'none';
@@ -77,27 +77,61 @@ const App: React.FC = () => {
     }
   }, [tasks]);
 
-  // タイマー機能
-  const startTimer = () => {
-    if (!selectedPresetId) return;
-    
-    const preset = timerPresets.find(p => p.id === selectedPresetId);
-    if (!preset || preset.flow.length === 0) return;
+  const handleTimerComplete = useCallback(() => {
+    // タスクに時間を記録
+    if (selectedTaskId && totalSeconds > 0) {
+      const elapsedSeconds = totalSeconds;
+      setTasks(prev => prev.map(task => 
+        task.id === selectedTaskId 
+          ? { ...task, totalSeconds: (task.totalSeconds || 0) + Math.round(elapsedSeconds) }
+          : task
+      ));
+    }
 
-    const total = calculateTotalSeconds(preset.flow);
-    setTotalSeconds(total);
-    setCurrentSeconds(total);
+    if (Notification.permission === 'granted') {
+      new Notification('タイマー終了', {
+        body: 'タイマーが完了しました！',
+        icon: '⏰'
+      });
+    }
+    
+    const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIGGK27OihUBALTqfj8bllHQc2jtTxy3kuBSh+zPDdkj0KE1iy6duqVxQLRJne8r1sIQUrgs/z2Yk1CBdftOrpollDCk6n5fK6aR0HNozU8sp5LgUqftDw3ZI7ChJYsunaqVYVDEOY3vK8bCAFK4PP8tmINQgXXbTo6aNYEQtNp+Xxu2oeByuAzvHZiTUIGGS47+mjURUMT6jl8rxsHwUnfM3v3I9ACxZat+rqpVcVDEKV3O+7bCEGLYXR89mJMwgXYLbr6aFaEwxOqOXyu2odBjKFzu/biTQIGGq+8OmnURUMTqfl8rxsHgcofc7w3pBAChZas+naqVYVDEOY3vK8bCAFK4LP8tiIOQgYYrjs6qJZEQtNp+Xzu2oeByuBzvHZiTUIGGO4+OijUhUMT6jl8btqHQcrhM/v14k1CBllvO/op1EVDUyn5fG7ax4HKn7P8N2SPAoSWLLp26lXFQxDmN7yvGwgBSuCz/PYiDUIGGK47Oqhkg==');
+    audio.play().catch(() => {});
+
+    // タイマーの状態をリセット
+    if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+    }
+    setTimerState('idle');
+    setCurrentSeconds(0);
+    setTotalSeconds(0);
+  }, [selectedTaskId, totalSeconds, setTasks, intervalRef, setTimerState, setCurrentSeconds, setTotalSeconds]);
+
+  // タイマー機能
+  useEffect(() => {
+    if (timerState === 'running' && currentSeconds <= 0) {
+      handleTimerComplete();
+    }
+  }, [currentSeconds, timerState, handleTimerComplete]);
+
+  const startTimer = () => {
+    if (timerState === 'running' || !selectedPresetId) return;
+
+    if (timerState === 'idle') {
+      const preset = timerPresets.find(p => p.id === selectedPresetId);
+      if (!preset || preset.flow.length === 0) return;
+
+      const total = calculateTotalSeconds(preset.flow);
+      setTotalSeconds(total);
+      setCurrentSeconds(total);
+    }
+
     setTimerState('running');
-    startTimeRef.current = Date.now();
+    startTimeRef.current = Date.now() - (totalSeconds - currentSeconds) * 1000;
 
     intervalRef.current = window.setInterval(() => {
-      setCurrentSeconds(prev => {
-        if (prev <= 1) {
-          handleTimerComplete();
-          return 0;
-        }
-        return prev - 1;
-      });
+      setCurrentSeconds(prev => prev - 1);
     }, 1000);
   };
 
@@ -139,36 +173,6 @@ const App: React.FC = () => {
     stopTimer();
   };
 
-  const handleTimerComplete = () => {
-    // タスクに時間を記録
-    if (selectedTaskId && totalSeconds > 0) {
-      const elapsedSeconds = totalSeconds;
-      setTasks(prev => prev.map(task => 
-        task.id === selectedTaskId 
-          ? { ...task, totalSeconds: (task.totalSeconds || 0) + Math.round(elapsedSeconds) }
-          : task
-      ));
-    }
-
-    if (Notification.permission === 'granted') {
-      new Notification('タイマー終了', {
-        body: 'タイマーが完了しました！',
-        icon: '⏰'
-      });
-    }
-    
-    const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIGGK27OihUBALTqfj8bllHQc2jtTxy3kuBSh+zPDdkj0KE1iy6duqVxQLRJne8r1sIQUrgs/z2Yk1CBdftOrpollDCk6n5fK6aR0HNozU8sp5LgUqftDw3ZI7ChJYsunaqVYVDEOY3vK8bCAFK4PP8tmINQgXXbTo6aNYEQtNp+Xxu2oeByuAzvHZiTUIGGS47+mjURUMT6jl8rxsHwUnfM3v3I9ACxZat+rqpVcVDEKV3O+7bCEGLYXR89mJMwgXYLbr6aFaEwxOqOXyu2odBjKFzu/biTQIGGq+8OmnURUMTqfl8rxsHgcofc7w3pBAChZas+naqVYVDEOY3vK8bCAFK4LP8tiIOQgYYrjs6qJZEQtNp+Xzu2oeByuBzvHZiTUIGGO4+OijUhUMT6jl8btqHQcrhM/v14k1CBllvO/op1EVDUyn5fG7ax4HKn7P8N2SPAoSWLLp26lXFQxDmN7yvGwgBSuCz/PYiDUIGGK47Oqhkg==');
-    audio.play().catch(() => {});
-
-    // タイマーの状態をリセット
-    if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-    }
-    setTimerState('idle');
-    setCurrentSeconds(0);
-    setTotalSeconds(0);
-  };
 
   const calculateTotalSeconds = (nodes: FlowNode[]): number => {
     let total = 0;
@@ -557,18 +561,8 @@ const FlowEditor: React.FC<{
   flow: FlowNode[];
   onUpdateFlow: (flow: FlowNode[]) => void;
 }> = ({ flow, onUpdateFlow }) => {
-  const [draggedItem, setDraggedItem] = useState<{ type: 'palette' | 'flow'; data: any; index?: number } | null>(null);
-
-  const addNode = (type: 'timer' | 'loop' | 'notification') => {
-    const newNode: FlowNode = {
-      id: Date.now().toString(),
-      type,
-      ...(type === 'timer' && { minutes: 25 }),
-      ...(type === 'loop' && { loopCount: 2, children: [] }),
-      ...(type === 'notification' && { notificationType: 'sound' as NotificationType })
-    };
-    onUpdateFlow([...flow, newNode]);
-  };
+  type PaletteItemType = 'timer' | 'loop' | 'notification';
+  const [draggedItem, setDraggedItem] = useState<{ type: 'palette' | 'flow'; data: PaletteItemType | FlowNode; index?: number } | null>(null);
 
   const updateNode = (index: number, updates: Partial<FlowNode>) => {
     const newFlow = [...flow];
@@ -587,7 +581,7 @@ const FlowEditor: React.FC<{
     onUpdateFlow(newFlow);
   };
 
-  const handleDragStart = (e: React.DragEvent, type: 'palette' | 'flow', data: any, index?: number) => {
+  const handleDragStart = (e: React.DragEvent, type: 'palette' | 'flow', data: PaletteItemType | FlowNode, index?: number) => {
     setDraggedItem({ type, data, index });
     e.dataTransfer.effectAllowed = 'move';
   };
@@ -601,7 +595,7 @@ const FlowEditor: React.FC<{
     e.preventDefault();
     if (!draggedItem) return;
 
-    if (draggedItem.type === 'palette') {
+    if (draggedItem.type === 'palette' && typeof draggedItem.data === 'string') {
       // パレットから追加
       const newNode: FlowNode = {
         id: Date.now().toString(),
