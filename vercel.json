@@ -3,7 +3,7 @@
     {
       "src": "timer-app/package.json",
       "use": "@vercel/static-build",
-      "config": { "distDir": "timer-app/dist" }
+      "config": { "distDir": "dist" }
     }
   ],
   "routes": [
