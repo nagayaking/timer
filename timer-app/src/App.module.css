@@ -33,7 +33,7 @@
   background-color: #2c2c2e;
   border-radius: 12px;
   padding: 24px;
-  height: calc(100vh - 200px);
+  min-height: 400px;
   overflow-y: auto;
 }
 
