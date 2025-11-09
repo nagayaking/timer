@@ -1,0 +1,32 @@
+/* TaskItem.module.css */
+
+.taskItem {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.taskItem.selected {
+  background-color: #3a3a3c;
+}
+
+.taskItem:hover {
+  background-color: #48484a;
+}
+
+.taskName {
+  flex-grow: 1;
+}
+
+.taskTime {
+  color: #8e8e93;
+  font-variant-numeric: tabular-nums;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}

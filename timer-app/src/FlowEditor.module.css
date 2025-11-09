@@ -1,0 +1,80 @@
+/* FlowEditor.module.css */
+
+.palette {
+  background-color: #3a3a3c;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.paletteTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #8e8e93;
+  margin-bottom: 8px;
+}
+
+.paletteButtons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.flowContainer {
+  background-color: #3a3a3c;
+  padding: 12px;
+  border-radius: 8px;
+  min-height: 200px;
+}
+
+.flowTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #8e8e93;
+  margin-bottom: 8px;
+}
+
+.flowList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.flowItem {
+  padding: 8px;
+  margin-bottom: 8px;
+  background-color: #2c2c2e;
+  border-radius: 8px;
+  cursor: move;
+}
+
+.childNodeActions {
+  display: flex;
+  flex-direction: column;
+  margin-left: auto;
+  gap: 4px;
+}
+
+
+.loopNode {
+  width: 100%;
+}
+
+.loopHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.loopChildren {
+  padding-left: 24px;
+  border-left: 2px solid #f48fb1;
+  margin-left: 12px;
+}
+
+.buttonSmall {
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
