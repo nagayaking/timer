@@ -247,15 +247,28 @@ const App: React.FC = () => {
                       type="text"
                       value={editingPresetName}
                       onChange={(e) => setEditingPresetName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          if (editingPresetName.trim()) updatePresetName(selectedPreset.id, editingPresetName);
+                          setIsEditingPresetName(false);
+                        } else if (e.key === 'Escape') {
+                          setIsEditingPresetName(false);
+                        }
+                      }}
+                      onBlur={() => {
+                        if (editingPresetName.trim()) updatePresetName(selectedPreset.id, editingPresetName);
+                        setIsEditingPresetName(false);
+                      }}
                       className={styles.textField}
+                      style={{ flexGrow: 1, width: 'auto', padding: '4px 8px' }}
                       autoFocus
                     />
-                    <button onClick={() => { updatePresetName(selectedPreset.id, editingPresetName); setIsEditingPresetName(false); }} className={`${styles.button} ${styles.primary}`}><Check size={16} /></button>
+                    <button onClick={() => { if (editingPresetName.trim()) updatePresetName(selectedPreset.id, editingPresetName); setIsEditingPresetName(false); }} className={`${styles.button} ${styles.primary}`}><Check size={16} /></button>
                     <button onClick={() => setIsEditingPresetName(false)} className={`${styles.button} ${styles.secondary}`}><X size={16} /></button>
                   </>
                 ) : (
                   <>
-                    <span style={{ flexGrow: 1, fontWeight: 600 }}>{selectedPreset.name}</span>
+                    <span style={{ flexGrow: 1, fontWeight: 600, padding: '5px 8px' }}>{selectedPreset.name}</span>
                     <button onClick={() => { setEditingPresetName(selectedPreset.name); setIsEditingPresetName(true); }} className={`${styles.button} ${styles.secondary}`}><Edit2 size={16} /></button>
                     <button onClick={() => deletePreset(selectedPreset.id)} className={`${styles.button} ${styles.error}`}><Trash2 size={16} /></button>
                   </>
@@ -648,7 +661,7 @@ const TaskItem: React.FC<{
   };
 
   return (
-    <div className={`${taskStyles.taskItem} ${isSelected ? taskStyles.selected : ''}`} onClick={onSelect}>
+    <div className={`${taskStyles.taskItem} ${isSelected ? taskStyles.selected : ''}`} onClick={!isEditing ? onSelect : undefined}>
       {isEditing ? (
         <input
           type="text"
@@ -660,19 +673,31 @@ const TaskItem: React.FC<{
             if (e.key === 'Escape') { setEditName(task.name); onEndEdit(); }
           }}
           onClick={(e) => e.stopPropagation()}
-          className={styles.textField}
+          className={`${styles.textField} ${taskStyles.taskName}`}
+          style={{ width: 'auto', padding: '4px 8px' }}
           autoFocus
         />
       ) : (
-        <>
-          <span className={taskStyles.taskName}>{task.name}</span>
-          <span className={taskStyles.taskTime}>{formatTaskTime(task.totalSeconds)}</span>
-          <div className={taskStyles.actions}>
+        <span className={taskStyles.taskName}>{task.name}</span>
+      )}
+      
+      <span className={taskStyles.taskTime}>
+        {!isEditing && formatTaskTime(task.totalSeconds)}
+      </span>
+      
+      <div className={taskStyles.actions}>
+        {isEditing ? (
+          <>
+            <button onClick={(e) => { e.stopPropagation(); handleSave(); }} className={`${styles.button} ${styles.primary} ${flowStyles.buttonSmall}`}><Check size={16} /></button>
+            <button onClick={(e) => { e.stopPropagation(); setEditName(task.name); onEndEdit(); }} className={`${styles.button} ${styles.secondary} ${flowStyles.buttonSmall}`}><X size={16} /></button>
+          </>
+        ) : (
+          <>
             <button onClick={(e) => { e.stopPropagation(); onStartEdit(); }} className={`${styles.button} ${styles.secondary} ${flowStyles.buttonSmall}`}><Edit2 size={16} /></button>
             <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className={`${styles.button} ${styles.error} ${flowStyles.buttonSmall}`}><Trash2 size={16} /></button>
-          </div>
-        </>
-      )}
+          </>
+        )}
+      </div>
     </div>
   );
 };
