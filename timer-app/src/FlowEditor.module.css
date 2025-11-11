@@ -48,13 +48,53 @@
   cursor: move;
 }
 
+.nodeEditor {
+  width: 100%; /* 親の幅いっぱいに広げる */
+}
+
+.childNodeEditor {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.nodeActions {
+  display: flex;
+  align-items: center;
+  margin-top: 8px;
+}
+
 .childNodeActions {
   display: flex;
-  flex-direction: column;
-  margin-left: auto;
+  align-items: center;
   gap: 4px;
 }
 
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: transparent;
+  border: none;
+  color: #e0e0e0;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.iconButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.deleteButton {
+  color: #f48fb1;
+}
+
+.deleteButton:hover {
+  background-color: rgba(244, 143, 177, 0.15);
+}
 
 .loopNode {
   width: 100%;

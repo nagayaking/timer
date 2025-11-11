@@ -403,7 +403,7 @@ const FlowEditor: React.FC<{
     onUpdateFlow(newFlow);
   };
 
-  const handleDragStart = (e: React.DragEvent, type: 'flow', data: FlowNode, index: number) => {
+  const handleDragStart = (e: React.DragEvent, type: 'palette' | 'flow', data: PaletteItemType | FlowNode, index?: number) => {
     setDraggedItem({ type, data, index });
     e.dataTransfer.effectAllowed = 'move';
   };
@@ -417,7 +417,23 @@ const FlowEditor: React.FC<{
     e.preventDefault();
     if (!draggedItem) return;
 
-    if (draggedItem.type === 'flow' && draggedItem.index !== undefined && targetIndex !== undefined) {
+    if (draggedItem.type === 'palette' && typeof draggedItem.data === 'string') {
+      const newNode: FlowNode = {
+        id: Date.now().toString(),
+        type: draggedItem.data,
+        ...(draggedItem.data === 'timer' && { minutes: 25 }),
+        ...(draggedItem.data === 'loop' && { loopCount: 2, children: [] }),
+        ...(draggedItem.data === 'notification' && { notificationType: 'sound' as NotificationType })
+      };
+      
+      const newFlow = [...flow];
+      if (targetIndex !== undefined) {
+        newFlow.splice(targetIndex, 0, newNode);
+      } else {
+        newFlow.push(newNode);
+      }
+      onUpdateFlow(newFlow);
+    } else if (draggedItem.type === 'flow' && draggedItem.index !== undefined && targetIndex !== undefined) {
       moveNode(draggedItem.index, targetIndex);
     }
 
@@ -429,9 +445,9 @@ const FlowEditor: React.FC<{
       <div className={flowStyles.palette}>
         <div className={flowStyles.paletteTitle}>Toolbox</div>
         <div className={flowStyles.paletteButtons}>
-          <button onClick={() => addNode('timer')} className={`${styles.button} ${styles.secondary}`}><Timer /> Timer</button>
-          <button onClick={() => addNode('loop')} className={`${styles.button} ${styles.secondary}`}><Loop /> Loop</button>
-          <button onClick={() => addNode('notification')} className={`${styles.button} ${styles.secondary}`}><Bell /> Notification</button>
+          <button onClick={() => addNode('timer')} draggable onDragStart={(e) => handleDragStart(e, 'palette', 'timer')} className={`${styles.button} ${styles.secondary}`}><Timer /> Timer</button>
+          <button onClick={() => addNode('loop')} draggable onDragStart={(e) => handleDragStart(e, 'palette', 'loop')} className={`${styles.button} ${styles.secondary}`}><Loop /> Loop</button>
+          <button onClick={() => addNode('notification')} draggable onDragStart={(e) => handleDragStart(e, 'palette', 'notification')} className={`${styles.button} ${styles.secondary}`}><Bell /> Notification</button>
         </div>
       </div>
       <div
@@ -442,7 +458,7 @@ const FlowEditor: React.FC<{
         <div className={flowStyles.flowTitle}>Flow</div>
         {flow.length === 0 ? (
           <div style={{ textAlign: 'center', color: '#8e8e93', paddingTop: '64px' }}>
-            Click elements to add them here
+            Click or drag elements to add them here
           </div>
         ) : (
           <ul className={flowStyles.flowList}>
@@ -587,13 +603,15 @@ const FlowNodeEditor: React.FC<{
   };
 
   return (
-    <div className={flowStyles.nodeEditor}>
+    <div>
       {renderNode()}
-      <div className={flowStyles.childNodeActions} style={{ marginLeft: 'auto' }}>
-        {onMoveUp && <button onClick={onMoveUp} className={`${styles.button} ${styles.secondary} ${flowStyles.buttonSmall}`}><ChevronUp size={16} /></button>}
-        {onMoveDown && <button onClick={onMoveDown} className={`${styles.button} ${styles.secondary} ${flowStyles.buttonSmall}`}><ChevronDown size={16} /></button>}
+      <div className={flowStyles.nodeActions}>
+        <div className={flowStyles.childNodeActions}>
+          {onMoveUp && <button onClick={onMoveUp} className={flowStyles.iconButton}><ChevronUp size={20} /></button>}
+          {onMoveDown && <button onClick={onMoveDown} className={flowStyles.iconButton}><ChevronDown size={20} /></button>}
+        </div>
+        <button onClick={onDelete} className={`${flowStyles.iconButton} ${flowStyles.deleteButton}`} style={{ marginLeft: 'auto' }}><Trash2 size={20} /></button>
       </div>
-      <button onClick={onDelete} className={`${styles.button} ${styles.error} ${flowStyles.buttonSmall}`}><Trash2 /></button>
     </div>
   );
 };
@@ -642,13 +660,17 @@ const ChildNodeEditor: React.FC<{
   };
 
   return (
-    <div className={flowStyles.childNodeEditor}>
-      {renderNode()}
-      <div className={flowStyles.childNodeActions}>
-        {onMoveUp && <button onClick={onMoveUp} className={`${styles.button} ${styles.secondary} ${flowStyles.buttonSmall}`}><ChevronUp size={16} /></button>}
-        {onMoveDown && <button onClick={onMoveDown} className={`${styles.button} ${styles.secondary} ${flowStyles.buttonSmall}`}><ChevronDown size={16} /></button>}
+    <div>
+      <div className={flowStyles.childNodeEditor}>
+        {renderNode()}
       </div>
-      <button onClick={onDelete} className={`${styles.button} ${styles.error} ${flowStyles.buttonSmall}`}><Trash2 /></button>
+      <div className={flowStyles.nodeActions}>
+        <div className={flowStyles.childNodeActions}>
+          {onMoveUp && <button onClick={onMoveUp} className={flowStyles.iconButton}><ChevronUp size={20} /></button>}
+          {onMoveDown && <button onClick={onMoveDown} className={flowStyles.iconButton}><ChevronDown size={20} /></button>}
+        </div>
+        <button onClick={onDelete} className={`${flowStyles.iconButton} ${flowStyles.deleteButton}`} style={{ marginLeft: 'auto' }}><Trash2 size={20} /></button>
+      </div>
     </div>
   );
 };
