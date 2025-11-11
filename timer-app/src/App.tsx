@@ -201,7 +201,7 @@ const App: React.FC = () => {
 
   const addTask = () => {
     const newTask: Task = { id: Date.now().toString(), name: 'New Task', totalSeconds: 0 };
-    setTasks([...tasks, newTask]);
+    setTasks([newTask, ...tasks]);
     setEditingTaskId(newTask.id);
   };
 
