@@ -49,6 +49,7 @@ const App: React.FC = () => {
   const [isEditingPresetName, setIsEditingPresetName] = useState(false);
   const [editingPresetName, setEditingPresetName] = useState('');
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [draggedTaskIndex, setDraggedTaskIndex] = useState<number | null>(null);
   
   const intervalRef = useRef<number | null>(null);
   const presetEditContainerRef = useRef<HTMLDivElement>(null);
@@ -86,7 +87,7 @@ const App: React.FC = () => {
       new Notification('Timer Finished', { body: 'The timer has completed!', icon: '⏰' });
     }
     
-    const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIGGK27OihUBALTqfj8bllHQc2jtTxy3kuBSh+zPDdkj0KE1iy6duqVxQLRJne8r1sIQUrgs/z2Yk1CBdftOrpollDCk6n5fK6aR0HNozU8sp5LgUqftDw3ZI7ChJYsunaqVYVDEOY3vK8bCAFK4PP8tmINQgXXbTo6aNYEQtNp+Xxu2oeByuAzvHZiTUIGGS47+mjURUMT6jl8rxsHwUnfM3v3I9ACxZat+rqpVcVDEKV3O+7bCEGLYXR89mJMwgXYLbr6aFaEwxOqOXyu2odBjKFzu/biTQIGGq+8OmnURUMTqfl8rxsHgcofc7w3pBAChZas+naqVYVDEOY3vK8bCAFK4LP8tiIOQgYYrjs6qJZEQtNp+Xzu2oeByuBzvHZiTUIGGO4+OijUhUMT6jl8btqHQcrhM/v14k1CBllvO/op1EVDUyn5fG7ax4HKn7P8N2SPAoSWLLp26lXFQxDmN7yvGwgBSuCz/PYiDUIGGK47Oqhkg==');
+    const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHf8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIGGK27OihUBALTqfj8bllHQc2jtTxy3kuBSh+zPDdkj0KE1iy6duqVxQLRJne8r1sIQUrgs/z2Yk1CBdftOrpollDCk6n5fK6aR0HNozU8sp5LgUqftDw3ZI7ChJYsunaqVYVDEOY3vK8bCAFK4PP8tmINQgXXbTo6aNYEQtNp+Xxu2oeByuAzvHZiTUIGGS47+mjURUMT6jl8rxsHwUnfM3v3I9ACxZat+rqpVcVDEKV3O+7bCEGLYXR89mJMwgXYLbr6aFaEwxOqOXyu2odBjKFzu/biTQIGGq+8OmnURUMTqfl8rxsHgcofc7w3pBAChZas+naqVYVDEOY3vK8bCAFK4LP8tiIOQgYYrjs6qJZEQtNp+Xzu2oeByuBzvHZiTUIGGO4+OijUhUMT6jl8btqHQcrhM/v14k1CBllvO/op1EVDUyn5fG7ax4HKn7P8N2SPAoSWLLp26lXFQxDmN7yvGwgBSuCz/PYiDUIGGK47Oqhkg==');
     audio.play().catch(() => {});
 
     if (intervalRef.current) clearInterval(intervalRef.current);
@@ -212,6 +213,13 @@ const App: React.FC = () => {
 
   const updateTaskName = (id: string, name: string) => {
     setTasks(prev => prev.map(t => t.id === id ? { ...t, name } : t));
+  };
+
+  const moveTask = (fromIndex: number, toIndex: number) => {
+    const newTasks = [...tasks];
+    const [movedTask] = newTasks.splice(fromIndex, 1);
+    newTasks.splice(toIndex, 0, movedTask);
+    setTasks(newTasks);
   };
 
   const formatTime = (seconds: number): string => {
@@ -347,7 +355,7 @@ const App: React.FC = () => {
             New Task
           </button>
           <div>
-            {tasks.map(task => (
+            {tasks.map((task, index) => (
               <TaskItem
                 key={task.id}
                 task={task}
@@ -359,6 +367,19 @@ const App: React.FC = () => {
                 onStartEdit={() => setEditingTaskId(task.id)}
                 onEndEdit={() => setEditingTaskId(null)}
                 formatTaskTime={formatTaskTime}
+                draggable={editingTaskId !== task.id}
+                onDragStart={() => {
+                  if (editingTaskId !== task.id) {
+                    setDraggedTaskIndex(index);
+                  }
+                }}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={() => {
+                  if (draggedTaskIndex !== null && draggedTaskIndex !== index) {
+                    moveTask(draggedTaskIndex, index);
+                  }
+                  setDraggedTaskIndex(null);
+                }}
               />
             ))}
           </div>
@@ -685,7 +706,11 @@ const TaskItem: React.FC<{
   onStartEdit: () => void;
   onEndEdit: () => void;
   formatTaskTime: (totalSeconds: number) => string;
-}> = ({ task, isSelected, isEditing, onSelect, onDelete, onUpdateName, onStartEdit, onEndEdit, formatTaskTime }) => {
+  draggable: boolean;
+  onDragStart: () => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDrop: () => void;
+}> = ({ task, isSelected, isEditing, onSelect, onDelete, onUpdateName, onStartEdit, onEndEdit, formatTaskTime, draggable, onDragStart, onDragOver, onDrop }) => {
   const [editName, setEditName] = useState(task.name);
   const editContainerRef = useRef<HTMLDivElement>(null);
 
@@ -713,7 +738,14 @@ const TaskItem: React.FC<{
   }, [isEditing, handleSave]);
 
   return (
-    <div className={`${taskStyles.taskItem} ${isSelected ? taskStyles.selected : ''}`} onClick={!isEditing ? onSelect : undefined}>
+    <div
+      className={`${taskStyles.taskItem} ${isSelected ? taskStyles.selected : ''}`}
+      onClick={!isEditing ? onSelect : undefined}
+      draggable={draggable}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+    >
       {isEditing ? (
         <div ref={editContainerRef} className={taskStyles.editContainer}>
           <input
