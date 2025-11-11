@@ -51,6 +51,26 @@ const App: React.FC = () => {
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   
   const intervalRef = useRef<number | null>(null);
+  const presetEditContainerRef = useRef<HTMLDivElement>(null);
+
+  const selectedPreset = timerPresets.find(p => p.id === selectedPresetId);
+  const progress = totalSeconds > 0 ? ((totalSeconds - currentSeconds) / totalSeconds) * 100 : 0;
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isEditingPresetName && presetEditContainerRef.current && !presetEditContainerRef.current.contains(event.target as Node)) {
+        if (editingPresetName.trim() && selectedPreset) {
+          updatePresetName(selectedPreset.id, editingPresetName);
+        }
+        setIsEditingPresetName(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isEditingPresetName, editingPresetName, selectedPreset]);
 
   const handleTimerComplete = useCallback(() => {
     if (selectedTaskId && totalSeconds > 0) {
@@ -208,9 +228,6 @@ const App: React.FC = () => {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  const selectedPreset = timerPresets.find(p => p.id === selectedPresetId);
-  const progress = totalSeconds > 0 ? ((totalSeconds - currentSeconds) / totalSeconds) * 100 : 0;
-
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>Flow Timer</h1>
@@ -240,35 +257,31 @@ const App: React.FC = () => {
           </button>
           {selectedPreset && (
             <div style={{ marginTop: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', width: '100%' }}>
                 {isEditingPresetName ? (
-                  <>
+                  <div ref={presetEditContainerRef} style={{ display: 'contents' }}>
                     <input
                       type="text"
                       value={editingPresetName}
                       onChange={(e) => setEditingPresetName(e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
-                          if (editingPresetName.trim()) updatePresetName(selectedPreset.id, editingPresetName);
+                          if (editingPresetName.trim() && selectedPreset) updatePresetName(selectedPreset.id, editingPresetName);
                           setIsEditingPresetName(false);
                         } else if (e.key === 'Escape') {
                           setIsEditingPresetName(false);
                         }
                       }}
-                      onBlur={() => {
-                        if (editingPresetName.trim()) updatePresetName(selectedPreset.id, editingPresetName);
-                        setIsEditingPresetName(false);
-                      }}
                       className={styles.textField}
-                      style={{ flexGrow: 1, width: 'auto', padding: '4px 8px' }}
+                      style={{ flexGrow: 1, width: 'auto', padding: '5px 8px', fontWeight: 600, flexBasis: 0 }}
                       autoFocus
                     />
-                    <button onClick={() => { if (editingPresetName.trim()) updatePresetName(selectedPreset.id, editingPresetName); setIsEditingPresetName(false); }} className={`${styles.button} ${styles.primary}`}><Check size={16} /></button>
+                    <button onClick={() => { if (editingPresetName.trim() && selectedPreset) updatePresetName(selectedPreset.id, editingPresetName); setIsEditingPresetName(false); }} className={`${styles.button} ${styles.primary}`}><Check size={16} /></button>
                     <button onClick={() => setIsEditingPresetName(false)} className={`${styles.button} ${styles.secondary}`}><X size={16} /></button>
-                  </>
+                  </div>
                 ) : (
                   <>
-                    <span style={{ flexGrow: 1, fontWeight: 600, padding: '5px 8px' }}>{selectedPreset.name}</span>
+                    <span style={{ flexGrow: 1, fontWeight: 600, padding: '5px 8px', border: '1px solid transparent', borderRadius: '8px' }}>{selectedPreset.name}</span>
                     <button onClick={() => { setEditingPresetName(selectedPreset.name); setIsEditingPresetName(true); }} className={`${styles.button} ${styles.secondary}`}><Edit2 size={16} /></button>
                     <button onClick={() => deletePreset(selectedPreset.id)} className={`${styles.button} ${styles.error}`}><Trash2 size={16} /></button>
                   </>
@@ -649,55 +662,66 @@ const TaskItem: React.FC<{
   formatTaskTime: (totalSeconds: number) => string;
 }> = ({ task, isSelected, isEditing, onSelect, onDelete, onUpdateName, onStartEdit, onEndEdit, formatTaskTime }) => {
   const [editName, setEditName] = useState(task.name);
+  const editContainerRef = useRef<HTMLDivElement>(null);
+
+  const handleSave = useCallback(() => {
+    if (editName.trim()) onUpdateName(editName);
+    else setEditName(task.name);
+    onEndEdit();
+  }, [editName, onUpdateName, onEndEdit, task.name]);
 
   useEffect(() => {
     setEditName(task.name);
   }, [task.name]);
 
-  const handleSave = () => {
-    if (editName.trim()) onUpdateName(editName);
-    else setEditName(task.name);
-    onEndEdit();
-  };
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isEditing && editContainerRef.current && !editContainerRef.current.contains(event.target as Node)) {
+        handleSave();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isEditing, handleSave]);
 
   return (
     <div className={`${taskStyles.taskItem} ${isSelected ? taskStyles.selected : ''}`} onClick={!isEditing ? onSelect : undefined}>
       {isEditing ? (
-        <input
-          type="text"
-          value={editName}
-          onChange={(e) => setEditName(e.target.value)}
-          onBlur={handleSave}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') handleSave();
-            if (e.key === 'Escape') { setEditName(task.name); onEndEdit(); }
-          }}
-          onClick={(e) => e.stopPropagation()}
-          className={`${styles.textField} ${taskStyles.taskName}`}
-          style={{ width: 'auto', padding: '4px 8px' }}
-          autoFocus
-        />
-      ) : (
-        <span className={taskStyles.taskName}>{task.name}</span>
-      )}
-      
-      <span className={taskStyles.taskTime}>
-        {!isEditing && formatTaskTime(task.totalSeconds)}
-      </span>
-      
-      <div className={taskStyles.actions}>
-        {isEditing ? (
-          <>
+        <div ref={editContainerRef} className={taskStyles.editContainer}>
+          <input
+            type="text"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleSave();
+              if (e.key === 'Escape') { setEditName(task.name); onEndEdit(); }
+            }}
+            onClick={(e) => e.stopPropagation()}
+            className={`${styles.textField} ${taskStyles.taskName}`}
+            style={{ width: 'auto', padding: '4px 8px', flexBasis: 0 }}
+            autoFocus
+          />
+          <span className={taskStyles.taskTime}></span>
+          <div className={taskStyles.actions}>
             <button onClick={(e) => { e.stopPropagation(); handleSave(); }} className={`${styles.button} ${styles.primary} ${flowStyles.buttonSmall}`}><Check size={16} /></button>
             <button onClick={(e) => { e.stopPropagation(); setEditName(task.name); onEndEdit(); }} className={`${styles.button} ${styles.secondary} ${flowStyles.buttonSmall}`}><X size={16} /></button>
-          </>
-        ) : (
-          <>
+          </div>
+        </div>
+      ) : (
+        <>
+          <span className={taskStyles.taskName}>{task.name}</span>
+          <span className={taskStyles.taskTime}>
+            {formatTaskTime(task.totalSeconds)}
+          </span>
+          <div className={taskStyles.actions}>
             <button onClick={(e) => { e.stopPropagation(); onStartEdit(); }} className={`${styles.button} ${styles.secondary} ${flowStyles.buttonSmall}`}><Edit2 size={16} /></button>
             <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className={`${styles.button} ${styles.error} ${flowStyles.buttonSmall}`}><Trash2 size={16} /></button>
-          </>
-        )}
-      </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
