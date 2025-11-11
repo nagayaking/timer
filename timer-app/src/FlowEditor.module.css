@@ -49,7 +49,10 @@
 }
 
 .nodeEditor {
+  display: flex;
+  align-items: center;
   width: 100%; /* 親の幅いっぱいに広げる */
+  gap: 8px;
 }
 
 .childNodeEditor {
