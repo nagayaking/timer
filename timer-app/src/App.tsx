@@ -375,6 +375,17 @@ const FlowEditor: React.FC<{
   type PaletteItemType = 'timer' | 'loop' | 'notification';
   const [draggedItem, setDraggedItem] = useState<{ type: 'palette' | 'flow'; data: PaletteItemType | FlowNode; index?: number } | null>(null);
 
+  const addNode = (type: PaletteItemType) => {
+    const newNode: FlowNode = {
+      id: Date.now().toString(),
+      type: type,
+      ...(type === 'timer' && { minutes: 25 }),
+      ...(type === 'loop' && { loopCount: 2, children: [] }),
+      ...(type === 'notification' && { notificationType: 'sound' as NotificationType })
+    };
+    onUpdateFlow([...flow, newNode]);
+  };
+
   const updateNode = (index: number, updates: Partial<FlowNode>) => {
     const newFlow = [...flow];
     newFlow[index] = { ...newFlow[index], ...updates };
@@ -392,7 +403,7 @@ const FlowEditor: React.FC<{
     onUpdateFlow(newFlow);
   };
 
-  const handleDragStart = (e: React.DragEvent, type: 'palette' | 'flow', data: PaletteItemType | FlowNode, index?: number) => {
+  const handleDragStart = (e: React.DragEvent, type: 'flow', data: FlowNode, index: number) => {
     setDraggedItem({ type, data, index });
     e.dataTransfer.effectAllowed = 'move';
   };
@@ -406,23 +417,7 @@ const FlowEditor: React.FC<{
     e.preventDefault();
     if (!draggedItem) return;
 
-    if (draggedItem.type === 'palette' && typeof draggedItem.data === 'string') {
-      const newNode: FlowNode = {
-        id: Date.now().toString(),
-        type: draggedItem.data,
-        ...(draggedItem.data === 'timer' && { minutes: 25 }),
-        ...(draggedItem.data === 'loop' && { loopCount: 2, children: [] }),
-        ...(draggedItem.data === 'notification' && { notificationType: 'sound' as NotificationType })
-      };
-      
-      const newFlow = [...flow];
-      if (targetIndex !== undefined) {
-        newFlow.splice(targetIndex, 0, newNode);
-      } else {
-        newFlow.push(newNode);
-      }
-      onUpdateFlow(newFlow);
-    } else if (draggedItem.type === 'flow' && draggedItem.index !== undefined && targetIndex !== undefined) {
+    if (draggedItem.type === 'flow' && draggedItem.index !== undefined && targetIndex !== undefined) {
       moveNode(draggedItem.index, targetIndex);
     }
 
@@ -434,9 +429,9 @@ const FlowEditor: React.FC<{
       <div className={flowStyles.palette}>
         <div className={flowStyles.paletteTitle}>Toolbox</div>
         <div className={flowStyles.paletteButtons}>
-          <button draggable onDragStart={(e) => handleDragStart(e, 'palette', 'timer')} className={`${styles.button} ${styles.secondary}`}><Timer /> Timer</button>
-          <button draggable onDragStart={(e) => handleDragStart(e, 'palette', 'loop')} className={`${styles.button} ${styles.secondary}`}><Loop /> Loop</button>
-          <button draggable onDragStart={(e) => handleDragStart(e, 'palette', 'notification')} className={`${styles.button} ${styles.secondary}`}><Bell /> Notification</button>
+          <button onClick={() => addNode('timer')} className={`${styles.button} ${styles.secondary}`}><Timer /> Timer</button>
+          <button onClick={() => addNode('loop')} className={`${styles.button} ${styles.secondary}`}><Loop /> Loop</button>
+          <button onClick={() => addNode('notification')} className={`${styles.button} ${styles.secondary}`}><Bell /> Notification</button>
         </div>
       </div>
       <div
@@ -447,7 +442,7 @@ const FlowEditor: React.FC<{
         <div className={flowStyles.flowTitle}>Flow</div>
         {flow.length === 0 ? (
           <div style={{ textAlign: 'center', color: '#8e8e93', paddingTop: '64px' }}>
-            Drag elements here
+            Click elements to add them here
           </div>
         ) : (
           <ul className={flowStyles.flowList}>
@@ -467,6 +462,8 @@ const FlowEditor: React.FC<{
                   node={node}
                   onUpdate={(updates) => updateNode(index, updates)}
                   onDelete={() => deleteNode(index)}
+                  onMoveUp={index > 0 ? () => moveNode(index, index - 1) : undefined}
+                  onMoveDown={index < flow.length - 1 ? () => moveNode(index, index + 1) : undefined}
                 />
               </li>
             ))}
@@ -481,7 +478,9 @@ const FlowNodeEditor: React.FC<{
   node: FlowNode;
   onUpdate: (updates: Partial<FlowNode>) => void;
   onDelete: () => void;
-}> = ({ node, onUpdate, onDelete }) => {
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+}> = ({ node, onUpdate, onDelete, onMoveUp, onMoveDown }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const addChildNode = (type: 'timer' | 'notification') => {
@@ -590,7 +589,11 @@ const FlowNodeEditor: React.FC<{
   return (
     <div className={flowStyles.nodeEditor}>
       {renderNode()}
-      <button onClick={onDelete} className={`${styles.button} ${styles.error} ${flowStyles.buttonSmall}`} style={{ marginLeft: 'auto' }}><Trash2 /></button>
+      <div className={flowStyles.childNodeActions} style={{ marginLeft: 'auto' }}>
+        {onMoveUp && <button onClick={onMoveUp} className={`${styles.button} ${styles.secondary} ${flowStyles.buttonSmall}`}><ChevronUp size={16} /></button>}
+        {onMoveDown && <button onClick={onMoveDown} className={`${styles.button} ${styles.secondary} ${flowStyles.buttonSmall}`}><ChevronDown size={16} /></button>}
+      </div>
+      <button onClick={onDelete} className={`${styles.button} ${styles.error} ${flowStyles.buttonSmall}`}><Trash2 /></button>
     </div>
   );
 };
