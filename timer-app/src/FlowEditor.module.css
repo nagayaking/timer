@@ -96,6 +96,14 @@
   background-color: rgba(244, 143, 177, 0.15);
 }
 
+.primaryButton {
+  color: #82b1ff; /* Material Blue A100 */
+}
+
+.primaryButton:hover {
+  background-color: rgba(130, 177, 255, 0.15);
+}
+
 .loopNode {
   width: 100%;
 }

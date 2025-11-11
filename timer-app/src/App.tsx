@@ -276,14 +276,14 @@ const App: React.FC = () => {
                       style={{ flexGrow: 1, width: 'auto', padding: '5px 8px', fontWeight: 600, flexBasis: 0 }}
                       autoFocus
                     />
-                    <button onClick={() => { if (editingPresetName.trim() && selectedPreset) updatePresetName(selectedPreset.id, editingPresetName); setIsEditingPresetName(false); }} className={`${styles.button} ${styles.primary}`}><Check size={16} /></button>
-                    <button onClick={() => setIsEditingPresetName(false)} className={`${styles.button} ${styles.secondary}`}><X size={16} /></button>
+                    <button onClick={() => { if (editingPresetName.trim() && selectedPreset) updatePresetName(selectedPreset.id, editingPresetName); setIsEditingPresetName(false); }} className={`${flowStyles.iconButton} ${flowStyles.primaryButton}`}><Check size={20} /></button>
+                    <button onClick={() => setIsEditingPresetName(false)} className={flowStyles.iconButton}><X size={20} /></button>
                   </div>
                 ) : (
                   <>
                     <span style={{ flexGrow: 1, fontWeight: 600, padding: '5px 8px', border: '1px solid transparent', borderRadius: '8px' }}>{selectedPreset.name}</span>
-                    <button onClick={() => { setEditingPresetName(selectedPreset.name); setIsEditingPresetName(true); }} className={`${styles.button} ${styles.secondary}`}><Edit2 size={16} /></button>
-                    <button onClick={() => deletePreset(selectedPreset.id)} className={`${styles.button} ${styles.error}`}><Trash2 size={16} /></button>
+                    <button onClick={() => { setEditingPresetName(selectedPreset.name); setIsEditingPresetName(true); }} className={flowStyles.iconButton}><Edit2 size={20} /></button>
+                    <button onClick={() => deletePreset(selectedPreset.id)} className={`${flowStyles.iconButton} ${flowStyles.deleteButton}`}><Trash2 size={20} /></button>
                   </>
                 )}
               </div>
@@ -731,8 +731,8 @@ const TaskItem: React.FC<{
           />
           <span className={taskStyles.taskTime}></span>
           <div className={taskStyles.actions}>
-            <button onClick={(e) => { e.stopPropagation(); handleSave(); }} className={`${styles.button} ${styles.primary} ${flowStyles.buttonSmall}`}><Check size={16} /></button>
-            <button onClick={(e) => { e.stopPropagation(); setEditName(task.name); onEndEdit(); }} className={`${styles.button} ${styles.secondary} ${flowStyles.buttonSmall}`}><X size={16} /></button>
+            <button onClick={(e) => { e.stopPropagation(); handleSave(); }} className={`${flowStyles.iconButton} ${flowStyles.primaryButton}`}><Check size={20} /></button>
+            <button onClick={(e) => { e.stopPropagation(); setEditName(task.name); onEndEdit(); }} className={flowStyles.iconButton}><X size={20} /></button>
           </div>
         </div>
       ) : (
@@ -742,8 +742,8 @@ const TaskItem: React.FC<{
             {formatTaskTime(task.totalSeconds)}
           </span>
           <div className={taskStyles.actions}>
-            <button onClick={(e) => { e.stopPropagation(); onStartEdit(); }} className={`${styles.button} ${styles.secondary} ${flowStyles.buttonSmall}`}><Edit2 size={16} /></button>
-            <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className={`${styles.button} ${styles.error} ${flowStyles.buttonSmall}`}><Trash2 size={16} /></button>
+            <button onClick={(e) => { e.stopPropagation(); onStartEdit(); }} className={flowStyles.iconButton}><Edit2 size={20} /></button>
+            <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className={`${flowStyles.iconButton} ${flowStyles.deleteButton}`}><Trash2 size={20} /></button>
           </div>
         </>
       )}
